@@ -21,9 +21,15 @@
     <ClCompile Include="DXApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DXUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DXApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
