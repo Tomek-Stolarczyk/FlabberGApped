@@ -31,13 +31,26 @@ DXApp::DXApp(HINSTANCE hInstance)
 	m_pRenderTargetView = nullptr;
 }
 
-
 DXApp::~DXApp()
 {
 	if (m_pImmediateContext)
 		m_pImmediateContext->ClearState();
 
+	Memory::SafeRelease(m_pPerObjectConstantBuffer);
+
+	Memory::SafeRelease(m_pDepthStencilView);
+	Memory::SafeRelease(m_pDepthStencilBuffer);
+
 	Memory::SafeRelease(m_pRenderTargetView);
+	m_pSwapChain->SetFullscreenState(FALSE, NULL);
+
+	Memory::SafeRelease(m_pIndexBuffer);
+	Memory::SafeRelease(m_pVertexBuffer);
+
+	Memory::SafeRelease(m_pLayout);
+	Memory::SafeRelease(m_pVS);
+	Memory::SafeRelease(m_pPS);
+
 	Memory::SafeRelease(m_pSwapChain);
 	Memory::SafeRelease(m_pImmediateContext);
 	Memory::SafeRelease(m_pDevice);
@@ -84,7 +97,6 @@ bool DXApp::InitWindow()
 	wcex.lpfnWndProc = MainWndProc;
 	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 	wcex.lpszClassName = "DXAPPWINDOWCLASS";
 	wcex.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
@@ -115,13 +127,11 @@ bool DXApp::InitWindow()
 	ShowWindow(m_hAppWnd, SW_SHOW);
 
 	return true;
-
 }
 
-bool DXApp::InitDirect3D()
+bool DXApp::BuildPipeline()
 {
 	//Create device
-
 	UINT createDeviceFlags = 0;
 #ifdef _DEBUG
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -136,7 +146,7 @@ bool DXApp::InitDirect3D()
 
 	UINT numDriverTypes = ARRAYSIZE(driverTypes);
 
-	D3D_FEATURE_LEVEL featureLevels[] = 
+	D3D_FEATURE_LEVEL featureLevels[] =
 	{
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0
@@ -163,10 +173,10 @@ bool DXApp::InitDirect3D()
 	HRESULT hr;
 	for (unsigned int i = 0; i < numDriverTypes; i++)
 	{
-		hr = D3D11CreateDeviceAndSwapChain(NULL,driverTypes[i],NULL,
-						createDeviceFlags,featureLevels,numFeatureLevels,
-						D3D11_SDK_VERSION, &swapDesc, &m_pSwapChain, &m_pDevice,
-						&m_FeatureLevel, &m_pImmediateContext);
+		hr = D3D11CreateDeviceAndSwapChain(NULL, driverTypes[i], NULL,
+			createDeviceFlags, featureLevels, numFeatureLevels,
+			D3D11_SDK_VERSION, &swapDesc, &m_pSwapChain, &m_pDevice,
+			&m_FeatureLevel, &m_pImmediateContext);
 		if (SUCCEEDED(hr))
 		{
 			m_DriverType = driverTypes[i];
@@ -202,6 +212,200 @@ bool DXApp::InitDirect3D()
 	return true;
 }
 
+bool DXApp::CompileVS()
+{
+	//Compile Shaders
+	ID3DBlob *VS, *Err;
+	VS = Err = NULL;
+	HRESULT hr;
+
+	hr = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_5_0", NULL, NULL, &VS, &Err);
+	if FAILED(hr)
+	{
+		if (Err)
+			OutputDebugString((char *)(Err->GetBufferPointer()));
+		Memory::SafeRelease(Err);
+		Memory::SafeRelease(VS);
+		return false;
+	}
+
+	//Bind Shaders to frame
+	m_pDevice->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &m_pVS);
+
+	m_pImmediateContext->VSSetShader(m_pVS, NULL, NULL);
+
+	//Configure the vertex descriptions
+	D3D11_INPUT_ELEMENT_DESC elementDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	m_pDevice->CreateInputLayout(elementDesc, sizeof(elementDesc) / sizeof(elementDesc[0]), VS->GetBufferPointer(), VS->GetBufferSize(), &m_pLayout);
+
+	m_pImmediateContext->IASetInputLayout(m_pLayout);
+
+	return true;
+}
+
+bool DXApp::CompilePS()
+{
+	//Compile Shaders
+	ID3DBlob *PS, *Err;
+	PS = Err = NULL;
+	HRESULT hr;
+	hr = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL, "main", "ps_5_0", NULL, NULL, &PS, &Err);
+	if FAILED(hr)
+	{
+		if (Err)
+			OutputDebugString((char *)(Err->GetBufferPointer()));
+		Memory::SafeRelease(Err);
+		Memory::SafeRelease(PS);
+		return false;
+	}
+
+	//Bind Shaders to frame
+	m_pDevice->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &m_pPS);
+
+	m_pImmediateContext->PSSetShader(m_pPS, NULL, NULL);
+
+	return true;
+}
+
+bool DXApp::BuildVertexBuffer(int numOfVertices)
+{
+	//Initiate Vertex Buffer
+	D3D11_BUFFER_DESC bufDesc;
+	ZeroMemory(&bufDesc, sizeof(bufDesc));
+
+	bufDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufDesc.ByteWidth = sizeof(VERTEX)* numOfVertices;
+	bufDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pVertexBuffer);
+
+	// Bind Vertex buffer
+	UINT stride = sizeof(VERTEX);
+	UINT offset = 0;
+
+	m_pImmediateContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
+
+	return true;
+}
+
+bool DXApp::BuildIndexBuffer(int numOfIndices)
+{
+	D3D11_BUFFER_DESC bufDesc;
+	ZeroMemory(&bufDesc, sizeof(bufDesc));
+
+	bufDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufDesc.ByteWidth = sizeof(DWORD) * numOfIndices;
+	bufDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pIndexBuffer);
+	m_pImmediateContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	return true;
+}
+
+bool DXApp::BuildDepthStencilView()
+{
+	D3D11_TEXTURE2D_DESC texDesc;
+	ZeroMemory(&texDesc, sizeof(texDesc));
+
+	texDesc.Width = m_ClientWidth;
+	texDesc.Height = m_ClientHeight;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	if FAILED(m_pDevice->CreateTexture2D(&texDesc, NULL, &m_pDepthStencilBuffer))
+	{
+		return false;
+	}
+	if FAILED(m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer, NULL, &m_pDepthStencilView))
+	{
+		return false;
+	}
+
+	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+
+	return true;
+}
+
+bool DXApp::CreateConstantBuffer()
+{
+    D3D11_BUFFER_DESC bufDesc;
+    ZeroMemory(&bufDesc, sizeof(bufDesc));
+
+    bufDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufDesc.ByteWidth = sizeof(cbPerObject);
+    bufDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bufDesc.CPUAccessFlags = 0;
+    bufDesc.MiscFlags = 0;
+
+    return SUCCEEDED(m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pPerObjectConstantBuffer));
+}
+
+void DXApp::SetCamera(float zoom)
+{
+    m_vCamPosition = DirectX::XMVectorSet(0.0f, 0.0f, zoom, 0.0f);
+    m_vCamTarget = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+    m_vCamUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+    m_mCamView = DirectX::XMMatrixLookAtLH(m_vCamPosition, m_vCamTarget, m_vCamUp);
+    float Aspect = (float)m_ClientWidth / m_ClientHeight;
+    m_mCamProjection = DirectX::XMMatrixPerspectiveFovLH( DirectX::XMConvertToRadians(70.0f), Aspect, 0.3f, 100.0f);
+
+}
+
+bool DXApp::InitDirect3D()
+{
+	if (!BuildPipeline()){
+		OutputDebugString("Failed to initialize device/rendertarget");
+		return false;
+	}
+
+	if (!CompileVS()){
+		OutputDebugString("Failed to Compile VertexShader");
+		return false;
+	}
+
+	if (!CompilePS()){
+		OutputDebugString("Failed to Compile PixelShader");
+		return false;
+	}
+
+	if (!BuildVertexBuffer(9)){
+		OutputDebugString("Failed to build and bind Vertex Buffer");
+		return false;
+	}
+
+	if (!BuildIndexBuffer(30)){
+		OutputDebugString("Failed to build and bind Index Buffer");
+		return false;
+	}
+
+	if (!BuildDepthStencilView()){
+		OutputDebugString("Failed to build depth stencil view");
+		return false;
+	}
+
+    if (!CreateConstantBuffer()){
+        OutputDebugString("Failed to create constant buffer");
+        return false;
+    }
+
+    SetCamera(-0.8f);
+
+	return true;
+}
 
 LRESULT DXApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -210,7 +414,10 @@ LRESULT DXApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-
+    case WM_KEYDOWN:
+    case WM_MOUSEWHEEL:
+        ProcessKey(wParam);
+        return 0;
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
