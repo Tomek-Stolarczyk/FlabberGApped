@@ -13,7 +13,8 @@ public:
 
 private:
     bool state[10];
-    float zoom = -0.8f;
+	float rot = 0.0f;
+	float rotSpeed = 0.0f;
 };
 
 TestApp::TestApp(HINSTANCE hInstance) : DXApp(hInstance)
@@ -37,36 +38,41 @@ void TestApp::ProcessKey(UINT keyPress)
 {
     if (keyPress == 0x00780000) //Scroll Up
     {
-        SetCamera(zoom += 0.1f);
+        SetCamera(m_Zoom += 0.1f);
     }
     else if (keyPress == 0xff880000) //Scroll Down
     {
-        SetCamera(zoom -= 0.1f);
+        SetCamera(m_Zoom -= 0.1f);
     }
     else if (keyPress >= 0x30 && keyPress <= 0x39) // Numbers
     {
         keyPress -= 0x30;
         if (keyPress == 0x0)
         {
-            for (int i = 0; i < sizeof(state); i++)
-                state[i] = 0;
+            for (int i = 0; i < sizeof(state) - 4; i++)
+                state[i] = 1;
         }
         else
         {
             state[keyPress-1] = !state[keyPress-1];
         }
     }
-    else if (keyPress >= 0x25 && keyPress <= 0x28) //Arrow Keys
-    {
-        if (keyPress == 0x25) //Left
-            ;
-        else if (keyPress == 0x26) //Up
-            ;
-        else if (keyPress == 0x27) //Right
-            ;
-        else if (keyPress == 0x28) //Down
-            ;
-    }
+	else if (keyPress >= 0x25 && keyPress <= 0x28) //Arrow Keys
+	{
+		if (keyPress == 0x25) //Left
+			;
+		else if (keyPress == 0x26) //Up
+			;
+		else if (keyPress == 0x27) //Right
+			;
+		else if (keyPress == 0x28) //Down
+			;
+	}
+	else if (keyPress == 0x21) // Page Up
+		rotSpeed += 0.0001f;
+	else if (keyPress == 0x22) // Page Down
+		rotSpeed -= 0.0001f;
+
 
 
     return;
@@ -74,6 +80,17 @@ void TestApp::ProcessKey(UINT keyPress)
 
 void TestApp::Update(float dt)
 {
+	rot += rotSpeed;
+	if (rot > DirectX::XM_2PI)
+		rot = 0.0f;
+
+	m_mWorld = DirectX::XMMatrixIdentity();
+	DirectX::XMVECTOR rotAxis = { 1.0f, 0.0f, 1.0f, 0.0f };
+	DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixRotationAxis(rotAxis, rot);
+
+	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslation(0.0f, 5.0f, 0.0f);
+
+	m_mWorld = translationMatrix * rotMatrix;
 
 }
 
@@ -98,11 +115,11 @@ void TestApp::Render(float dt)
 	};
 
 	DWORD Indices[] = {
-        0, 4, 2, // Back
-        2, 4, 1, // Bottom
-        4, 3, 1, // Bottom
-        2, 1, 0, // Left Side
-		3, 4, 0, // Right Side
+        2, 4, 0, // Back
+        1, 4, 2, // Bottom
+        1, 3, 4, // Bottom
+        0, 1, 2, // Left Side
+		0, 4, 3, // Right Side
         3, 1, 0, // Front
 
 
@@ -124,7 +141,7 @@ void TestApp::Render(float dt)
 	memcpy(mapSub.pData, Indices, sizeof(Indices));
 	m_pImmediateContext->Unmap(m_pIndexBuffer, NULL);
 
-    m_mWorld = DirectX::XMMatrixIdentity();
+    
     m_mWVP = m_mWorld * m_mCamView * m_mCamProjection;
     m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
     m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);

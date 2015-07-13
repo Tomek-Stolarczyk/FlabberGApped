@@ -66,6 +66,8 @@ protected:
 	DirectX::XMVECTOR			m_vCamTarget;
 	DirectX::XMVECTOR			m_vCamUp;
 
+	float						m_Zoom;
+
 	// DX resources
 
 	ID3D11Buffer*               m_pVertexBuffer;

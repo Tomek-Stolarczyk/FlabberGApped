@@ -216,14 +216,13 @@ bool DXApp::CompileVS()
 {
 	//Compile Shaders
 	ID3DBlob *VS, *Err;
-	VS = Err = NULL;
 	HRESULT hr;
 
 	hr = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_5_0", NULL, NULL, &VS, &Err);
 	if FAILED(hr)
 	{
 		if (Err)
-			OutputDebugString((char *)(Err->GetBufferPointer()));
+			OutputDebugString(static_cast<char *>(Err->GetBufferPointer()));
 		Memory::SafeRelease(Err);
 		Memory::SafeRelease(VS);
 		return false;
@@ -252,13 +251,12 @@ bool DXApp::CompilePS()
 {
 	//Compile Shaders
 	ID3DBlob *PS, *Err;
-	PS = Err = NULL;
 	HRESULT hr;
 	hr = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL, "main", "ps_5_0", NULL, NULL, &PS, &Err);
 	if FAILED(hr)
 	{
 		if (Err)
-			OutputDebugString((char *)(Err->GetBufferPointer()));
+			OutputDebugString(static_cast<char *>(Err->GetBufferPointer()));
 		Memory::SafeRelease(Err);
 		Memory::SafeRelease(PS);
 		return false;
@@ -367,6 +365,8 @@ void DXApp::SetCamera(float zoom)
 
 bool DXApp::InitDirect3D()
 {
+	m_Zoom = -5.0f;
+
 	if (!BuildPipeline()){
 		OutputDebugString("Failed to initialize device/rendertarget");
 		return false;
@@ -402,7 +402,7 @@ bool DXApp::InitDirect3D()
         return false;
     }
 
-    SetCamera(-0.8f);
+    SetCamera(m_Zoom);
 
 	return true;
 }
