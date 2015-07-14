@@ -66,7 +66,7 @@ protected:
 	DirectX::XMVECTOR			m_vCamTarget;
 	DirectX::XMVECTOR			m_vCamUp;
 
-	float						m_Zoom;
+	float						m_Zoom = -8.0f;
 
 	// DX resources
 
@@ -75,6 +75,8 @@ protected:
 	ID3D11Texture2D*			m_pDepthStencilBuffer;
 	ID3D11InputLayout*			m_pLayout;
 	ID3D11Buffer*				m_pPerObjectConstantBuffer;
+
+	ID3D11RasterizerState*		m_pWireFrameRasterizer;
 
     // Raw DX Resources
 
@@ -98,6 +100,7 @@ private:
 	bool BuildIndexBuffer(int numOfIndices);
 	bool BuildDepthStencilView();
     bool CreateConstantBuffer();
+	bool CreateRasterizerState();
     
 };
 

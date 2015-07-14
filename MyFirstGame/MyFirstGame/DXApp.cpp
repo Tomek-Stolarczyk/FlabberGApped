@@ -41,6 +41,8 @@ DXApp::~DXApp()
 	Memory::SafeRelease(m_pDepthStencilView);
 	Memory::SafeRelease(m_pDepthStencilBuffer);
 
+	Memory::SafeRelease(m_pWireFrameRasterizer);
+
 	Memory::SafeRelease(m_pRenderTargetView);
 	m_pSwapChain->SetFullscreenState(FALSE, NULL);
 
@@ -351,6 +353,16 @@ bool DXApp::CreateConstantBuffer()
     return SUCCEEDED(m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pPerObjectConstantBuffer));
 }
 
+bool DXApp::CreateRasterizerState()
+{
+	D3D11_RASTERIZER_DESC wfdesc;
+	ZeroMemory(&wfdesc, sizeof(wfdesc));
+	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
+	wfdesc.CullMode = D3D11_CULL_NONE;
+
+	return SUCCEEDED(m_pDevice->CreateRasterizerState(&wfdesc, &m_pWireFrameRasterizer));
+}
+
 void DXApp::SetCamera(float zoom)
 {
     m_vCamPosition = DirectX::XMVectorSet(0.0f, 0.0f, zoom, 0.0f);
@@ -365,8 +377,6 @@ void DXApp::SetCamera(float zoom)
 
 bool DXApp::InitDirect3D()
 {
-	m_Zoom = -5.0f;
-
 	if (!BuildPipeline()){
 		OutputDebugString("Failed to initialize device/rendertarget");
 		return false;
@@ -401,6 +411,11 @@ bool DXApp::InitDirect3D()
         OutputDebugString("Failed to create constant buffer");
         return false;
     }
+
+	if (!CreateRasterizerState()){
+		OutputDebugString("Failed to create wireframe rasterizer state");
+		return false;
+	}
 
     SetCamera(m_Zoom);
 

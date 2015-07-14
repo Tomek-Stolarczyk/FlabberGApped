@@ -129,6 +129,8 @@ void TestApp::Render(float dt)
 	};
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pImmediateContext->RSSetState(m_pWireFrameRasterizer);
+	
 	D3D11_MAPPED_SUBRESOURCE mapSub;
 
 	ZeroMemory(&mapSub, sizeof(mapSub));
