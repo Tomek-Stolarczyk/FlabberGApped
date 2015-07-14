@@ -7,6 +7,7 @@
 typedef struct 
 {
 	DirectX::XMVECTOR pos;
+	DirectX::XMVECTOR texCoord;
 	DirectX::XMVECTOR colour;
 } VERTEX, *pVertex;
 
@@ -78,6 +79,9 @@ protected:
 
 	ID3D11RasterizerState*		m_pWireFrameRasterizer;
 
+	ID3D11ShaderResourceView*	m_pTextureResource;
+	ID3D11SamplerState*			m_pTextureSamplerState;
+
     // Raw DX Resources
 
     cbPerObject                 m_cbPerObj;
@@ -101,6 +105,7 @@ private:
 	bool BuildDepthStencilView();
     bool CreateConstantBuffer();
 	bool CreateRasterizerState();
+	bool LoadTexture(char *TexPath);
     
 };
 

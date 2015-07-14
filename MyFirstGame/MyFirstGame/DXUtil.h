@@ -4,6 +4,7 @@
 #include <DirectXColors.h>
 #include <DirectXMath.h>
 #include <D3Dcompiler.h>
+#include "DDSTextureLoader.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "D3DCompiler.lib")

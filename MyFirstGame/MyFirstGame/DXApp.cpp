@@ -126,9 +126,7 @@ bool DXApp::InitWindow()
 		return false;
 	}
 
-	ShowWindow(m_hAppWnd, SW_SHOW);
-
-	return true;
+	return (0 == ShowWindow(m_hAppWnd, SW_SHOW));
 }
 
 bool DXApp::BuildPipeline()
@@ -195,8 +193,21 @@ bool DXApp::BuildPipeline()
 	// Create Render Target View
 
 	ID3D11Texture2D* m_pBackBufferTex;
-	m_pSwapChain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&m_pBackBufferTex));
-	m_pDevice->CreateRenderTargetView(m_pBackBufferTex, nullptr, &m_pRenderTargetView);
+	hr = m_pSwapChain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&m_pBackBufferTex));
+	
+	if (FAILED(hr))
+	{
+		OutputDebugString("Failed to fetch back buffer");
+		return false;
+	}
+
+	hr = m_pDevice->CreateRenderTargetView(m_pBackBufferTex, nullptr, &m_pRenderTargetView);
+
+	if (FAILED(hr))
+	{
+		OutputDebugString("Failed to create render target");
+		return false;
+	}
 
 	// Bind Render Target View
 	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, nullptr);
@@ -239,14 +250,15 @@ bool DXApp::CompileVS()
 	D3D11_INPUT_ELEMENT_DESC elementDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	m_pDevice->CreateInputLayout(elementDesc, sizeof(elementDesc) / sizeof(elementDesc[0]), VS->GetBufferPointer(), VS->GetBufferSize(), &m_pLayout);
+	hr = m_pDevice->CreateInputLayout(elementDesc, sizeof(elementDesc) / sizeof(elementDesc[0]), VS->GetBufferPointer(), VS->GetBufferSize(), &m_pLayout);
 
 	m_pImmediateContext->IASetInputLayout(m_pLayout);
 
-	return true;
+	return SUCCEEDED(hr);
 }
 
 bool DXApp::CompilePS()
@@ -265,15 +277,17 @@ bool DXApp::CompilePS()
 	}
 
 	//Bind Shaders to frame
-	m_pDevice->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &m_pPS);
+	hr = m_pDevice->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &m_pPS);
 
 	m_pImmediateContext->PSSetShader(m_pPS, NULL, NULL);
 
-	return true;
+	return SUCCEEDED(hr);
 }
 
 bool DXApp::BuildVertexBuffer(int numOfVertices)
 {
+	HRESULT hr;
+
 	//Initiate Vertex Buffer
 	D3D11_BUFFER_DESC bufDesc;
 	ZeroMemory(&bufDesc, sizeof(bufDesc));
@@ -283,7 +297,7 @@ bool DXApp::BuildVertexBuffer(int numOfVertices)
 	bufDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pVertexBuffer);
+	hr = m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pVertexBuffer);
 
 	// Bind Vertex buffer
 	UINT stride = sizeof(VERTEX);
@@ -291,11 +305,13 @@ bool DXApp::BuildVertexBuffer(int numOfVertices)
 
 	m_pImmediateContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
 
-	return true;
+	return SUCCEEDED(hr);
 }
 
 bool DXApp::BuildIndexBuffer(int numOfIndices)
 {
+	HRESULT hr;
+
 	D3D11_BUFFER_DESC bufDesc;
 	ZeroMemory(&bufDesc, sizeof(bufDesc));
 
@@ -304,10 +320,10 @@ bool DXApp::BuildIndexBuffer(int numOfIndices)
 	bufDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pIndexBuffer);
+	hr = m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pIndexBuffer);
 	m_pImmediateContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	return true;
+	return SUCCEEDED(hr);
 }
 
 bool DXApp::BuildDepthStencilView()
@@ -361,6 +377,14 @@ bool DXApp::CreateRasterizerState()
 	wfdesc.CullMode = D3D11_CULL_NONE;
 
 	return SUCCEEDED(m_pDevice->CreateRasterizerState(&wfdesc, &m_pWireFrameRasterizer));
+}
+
+bool DXApp::LoadTexture(char *TexPath)
+{
+
+	//DirectX::CreateDDSTextureFromFile(m_pDevice, TexPath, &m_pTextureResource,); TODO
+	return true;
+		
 }
 
 void DXApp::SetCamera(float zoom)
@@ -437,6 +461,8 @@ LRESULT DXApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 }
+
+
 
 
 
