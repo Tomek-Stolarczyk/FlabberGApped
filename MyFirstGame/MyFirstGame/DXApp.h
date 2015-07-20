@@ -6,9 +6,8 @@
 
 typedef struct 
 {
-	DirectX::XMVECTOR pos;
-	DirectX::XMVECTOR texCoord;
-	DirectX::XMVECTOR colour;
+	DirectX::XMFLOAT3 pos;
+	DirectX::XMFLOAT2 texCoord;
 } VERTEX, *pVertex;
 
 struct cbPerObject
@@ -32,6 +31,8 @@ public:
 	virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     void SetCamera(float zoom);
+	bool LoadTexture(const wchar_t *TexPath);
+	bool MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes);
 
 protected:
 
@@ -67,7 +68,7 @@ protected:
 	DirectX::XMVECTOR			m_vCamTarget;
 	DirectX::XMVECTOR			m_vCamUp;
 
-	float						m_Zoom = -8.0f;
+	float						m_Zoom = -2.0f;
 
 	// DX resources
 
@@ -79,7 +80,8 @@ protected:
 
 	ID3D11RasterizerState*		m_pWireFrameRasterizer;
 
-	ID3D11ShaderResourceView*	m_pTextureResource;
+	ID3D11ShaderResourceView*	m_pTextureResourceView;
+	ID3D11Resource*				m_pTextureResource;
 	ID3D11SamplerState*			m_pTextureSamplerState;
 
     // Raw DX Resources
@@ -105,7 +107,5 @@ private:
 	bool BuildDepthStencilView();
     bool CreateConstantBuffer();
 	bool CreateRasterizerState();
-	bool LoadTexture(char *TexPath);
-    
 };
 

@@ -4,10 +4,16 @@
 #include <DirectXColors.h>
 #include <DirectXMath.h>
 #include <D3Dcompiler.h>
-#include "DDSTextureLoader.h"
+#include <DDSTextureLoader.h>
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "D3DCompiler.lib")
+
+#ifdef _DEBUG
+	#pragma comment (lib, "DirectXTKD.lib")
+#else
+	#pragma comment (lib, "DirectXTK.lib")
+#endif //_Debug
 
 namespace Memory
 {

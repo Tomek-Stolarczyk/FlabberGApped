@@ -231,7 +231,7 @@ bool DXApp::CompileVS()
 	ID3DBlob *VS, *Err;
 	HRESULT hr;
 
-	hr = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_5_0", NULL, NULL, &VS, &Err);
+	hr = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_4_0", D3DCOMPILE_DEBUG, D3DCOMPILE_PREFER_FLOW_CONTROL, &VS, &Err);
 	if FAILED(hr)
 	{
 		if (Err)
@@ -250,8 +250,7 @@ bool DXApp::CompileVS()
 	D3D11_INPUT_ELEMENT_DESC elementDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	hr = m_pDevice->CreateInputLayout(elementDesc, sizeof(elementDesc) / sizeof(elementDesc[0]), VS->GetBufferPointer(), VS->GetBufferSize(), &m_pLayout);
@@ -266,7 +265,7 @@ bool DXApp::CompilePS()
 	//Compile Shaders
 	ID3DBlob *PS, *Err;
 	HRESULT hr;
-	hr = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL, "main", "ps_5_0", NULL, NULL, &PS, &Err);
+	hr = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL, "main", "ps_4_0", D3DCOMPILE_DEBUG, D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_SKIP_OPTIMIZATION, &PS, &Err);
 	if FAILED(hr)
 	{
 		if (Err)
@@ -379,12 +378,38 @@ bool DXApp::CreateRasterizerState()
 	return SUCCEEDED(m_pDevice->CreateRasterizerState(&wfdesc, &m_pWireFrameRasterizer));
 }
 
-bool DXApp::LoadTexture(char *TexPath)
+bool DXApp::LoadTexture(const wchar_t *TexPath)
 {
+	HRESULT hr;
+	hr = DirectX::CreateDDSTextureFromFile(m_pDevice, TexPath, &m_pTextureResource, &m_pTextureResourceView);
+	if (FAILED(hr))
+	{
+		if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+		{
+			OutputDebugString("Error: Texture file not found");
+			return false;
+		}
+		else
+		{
+			OutputDebugString("Unknown Error loading Texture File");
+		}
+	}
 
-	//DirectX::CreateDDSTextureFromFile(m_pDevice, TexPath, &m_pTextureResource,); TODO
-	return true;
-		
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MaxAnisotropy = 1;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = m_pDevice->CreateSamplerState(&sampDesc, &m_pTextureSamplerState);
+
+	return SUCCEEDED(hr);
 }
 
 void DXApp::SetCamera(float zoom)
@@ -397,6 +422,15 @@ void DXApp::SetCamera(float zoom)
     float Aspect = (float)m_ClientWidth / m_ClientHeight;
     m_mCamProjection = DirectX::XMMatrixPerspectiveFovLH( DirectX::XMConvertToRadians(70.0f), Aspect, 0.3f, 100.0f);
 
+}
+
+bool DXApp::MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes)
+{
+	D3D11_MAPPED_SUBRESOURCE mapSub;
+	ZeroMemory(&mapSub, sizeof(mapSub));
+	m_pImmediateContext->Map(m_pVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
+	memcpy(mapSub.pData, Pyramid, sizeof(Pyramid));
+	m_pImmediateContext->Unmap(m_pVertexBuffer, NULL);
 }
 
 bool DXApp::InitDirect3D()

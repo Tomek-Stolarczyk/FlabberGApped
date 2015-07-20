@@ -6,20 +6,15 @@ cbuffer cbPerObject
 struct VOut
 {
 	float4 position : SV_POSITION;
-	float4 color : COLOR;
+	float2 TexCoord : TEXCOORD;
 };
 
-VOut main(float4 position : POSITION, float4 color : COLOR)
+VOut main(float4 position : POSITION, float2 inTexCoord: TEXCOORD)
 {
 	VOut output;
 
     output.position = mul(position, WVP);
-
-	if (position.y > 0)
-		output.color = float4(0.0f, 0.8f, 0.0f, 0.0f);
-	else
-		output.color =  float4(0.0f, 0.0f, 0.0f, 0.0f);
-    output.color = color;
+	output.TexCoord = inTexCoord;
 
 	return output;
 }

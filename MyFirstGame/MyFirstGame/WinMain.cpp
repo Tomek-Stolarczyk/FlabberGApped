@@ -12,7 +12,7 @@ public:
     void ProcessKey(UINT keyPress);
 
 private:
-    bool state[10];
+	bool state[10];
 	float rot = 0.0f;
 	float rotSpeed = 0.0f;
 };
@@ -31,6 +31,10 @@ bool TestApp::Init()
 {
 	if (!DXApp::Init())
 		return false;
+	
+	LoadTexture(L"..\\..\\Resources\\Wood.DDS");
+	for (int i = 0; i < sizeof(state); i++)
+		state[i] = true;
 	return true;
 }
 
@@ -50,7 +54,7 @@ void TestApp::ProcessKey(UINT keyPress)
         if (keyPress == 0x0)
         {
             for (int i = 0; i < sizeof(state) - 4; i++)
-                state[i] = 1;
+                state[i] = true;
         }
         else
         {
@@ -72,9 +76,6 @@ void TestApp::ProcessKey(UINT keyPress)
 		rotSpeed += 0.0001f;
 	else if (keyPress == 0x22) // Page Down
 		rotSpeed -= 0.0001f;
-
-
-
     return;
 }
 
@@ -85,10 +86,12 @@ void TestApp::Update(float dt)
 		rot = 0.0f;
 
 	m_mWorld = DirectX::XMMatrixIdentity();
-	DirectX::XMVECTOR rotAxis = { 1.0f, 0.0f, 1.0f, 0.0f };
-	DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixRotationAxis(rotAxis, rot);
+	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixIdentity();
+	DirectX::XMVECTOR rotAxis = { 0.0f, 1.0f, 0.0f, 0.0f };
 
-	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslation(0.0f, 5.0f, 0.0f);
+	rotMatrix = DirectX::XMMatrixRotationAxis(rotAxis, rot);
+	//translationMatrix = DirectX::XMMatrixTranslation(0.0f, 5.0f, 0.0f);
 
 	m_mWorld = translationMatrix * rotMatrix;
 
@@ -96,22 +99,23 @@ void TestApp::Update(float dt)
 
 void TestApp::Render(float dt)
 {
+
 	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView, DirectX::Colors::Blue);
 	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 
 	VERTEX Pyramid[] = {
-		{ { 0.0f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },  //0 Tip
-		{ {-0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 0.0f } },  //1 Back Left
-		{ {-0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.0f, 0.0f } }, //2 Front Left
-		{ {0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f, 0.0f } },  //3 Back Right
-		{ {0.5f, -0.5f, 0.5f }, { 0.0f, 0.5f, 0.5f, 0.0f } },   //4 Front Right
+		{ {  0.0f,  0.5f,  0.0f }, {0.5f, 0.0f}},  //0 Tip
+		{ { -0.5f, -0.5f, -0.5f }, {1.0f, 1.0f}},  //1 Front Right
+		{ { -0.5f, -0.5f,  0.5f }, {1.0f, 1.0f}}, //2 Back Right
+		{ {  0.5f, -0.5f, -0.5f }, {1.0f, 0.0f}},  //3 Front Left
+		{ {  0.5f, -0.5f,  0.5f }, {1.0f, 0.0f}},   //4 Back Left
 
 		//Square
-		{ { -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },  //5 Top Left
-		{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },  //6 Top right
-		{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },  //7 Bottom right
-		{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },  //8 bottom left
+		{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f} },  //5 Top Left
+		{ { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f} },  //6 Top right
+		{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f} },  //7 Bottom right
+		{ { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f} },  //8 bottom left
 	};
 
 	DWORD Indices[] = {
@@ -122,17 +126,19 @@ void TestApp::Render(float dt)
 		0, 4, 3, // Right Side
         3, 1, 0, // Front
 
+		//5, 7, 8,
+		//5, 6, 7
 
-		//Square
-		5, 6, 7,  
-		5, 7, 8,
+
 	};
+	
+	// IA
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pImmediateContext->RSSetState(m_pWireFrameRasterizer);
-	
-	D3D11_MAPPED_SUBRESOURCE mapSub;
 
+	MapBuffer(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
+
+	D3D11_MAPPED_SUBRESOURCE mapSub;
 	ZeroMemory(&mapSub, sizeof(mapSub));
 	m_pImmediateContext->Map(m_pVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
 	memcpy(mapSub.pData, Pyramid, sizeof(Pyramid));
@@ -143,17 +149,30 @@ void TestApp::Render(float dt)
 	memcpy(mapSub.pData, Indices, sizeof(Indices));
 	m_pImmediateContext->Unmap(m_pIndexBuffer, NULL);
 
+	// Vertex Shader
     
     m_mWVP = m_mWorld * m_mCamView * m_mCamProjection;
     m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
     m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);
     m_pImmediateContext->VSSetConstantBuffers(0,1, &m_pPerObjectConstantBuffer);
 
+	// Pixel Shader
+	
+	m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureResourceView);
+	m_pImmediateContext->PSSetSamplers(0, 1, &m_pTextureSamplerState);
+
+	// Rasterizer
+
+	//m_pImmediateContext->RSSetState(m_pWireFrameRasterizer);
+
+	// Draw
 
     for (int i = 0; i < sizeof(state); i++)
     {
-        if (state[i])
-            m_pImmediateContext->DrawIndexed(3, 3 * i, 0);
+		if (state[i])
+		{
+			m_pImmediateContext->DrawIndexed(3, 3 * i, 0);
+		}
     }
         
 	m_pSwapChain->Present(0, 0);
