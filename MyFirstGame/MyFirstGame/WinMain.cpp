@@ -138,16 +138,7 @@ void TestApp::Render(float dt)
 
 	MapBuffer(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
 
-	D3D11_MAPPED_SUBRESOURCE mapSub;
-	ZeroMemory(&mapSub, sizeof(mapSub));
-	m_pImmediateContext->Map(m_pVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
-	memcpy(mapSub.pData, Pyramid, sizeof(Pyramid));
-	m_pImmediateContext->Unmap(m_pVertexBuffer, NULL);
-
-	ZeroMemory(&mapSub, sizeof(mapSub));
-	m_pImmediateContext->Map(m_pIndexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
-	memcpy(mapSub.pData, Indices, sizeof(Indices));
-	m_pImmediateContext->Unmap(m_pIndexBuffer, NULL);
+	MapBuffer(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indices), sizeof(Indices));
 
 	// Vertex Shader
     

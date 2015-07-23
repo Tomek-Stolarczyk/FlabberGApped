@@ -74,15 +74,19 @@ protected:
 
 	ID3D11Buffer*               m_pVertexBuffer;
 	ID3D11Buffer*				m_pIndexBuffer;
+	ID3D11Buffer*				m_pPerObjectConstantBuffer;
 	ID3D11Texture2D*			m_pDepthStencilBuffer;
 	ID3D11InputLayout*			m_pLayout;
-	ID3D11Buffer*				m_pPerObjectConstantBuffer;
 
 	ID3D11RasterizerState*		m_pWireFrameRasterizer;
+	ID3D11RasterizerState*		m_pCCWcullMode;
+	ID3D11RasterizerState*		m_pCWcullMode;
 
 	ID3D11ShaderResourceView*	m_pTextureResourceView;
 	ID3D11Resource*				m_pTextureResource;
 	ID3D11SamplerState*			m_pTextureSamplerState;
+
+	ID3D11BlendState*			m_pTransparencyBlend;
 
     // Raw DX Resources
 
@@ -107,5 +111,6 @@ private:
 	bool BuildDepthStencilView();
     bool CreateConstantBuffer();
 	bool CreateRasterizerState();
+	bool CreateBlendState();
 };
 

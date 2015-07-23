@@ -42,6 +42,10 @@ DXApp::~DXApp()
 	Memory::SafeRelease(m_pDepthStencilBuffer);
 
 	Memory::SafeRelease(m_pWireFrameRasterizer);
+	Memory::SafeRelease(m_pCCWcullMode);
+	Memory::SafeRelease(m_pCWcullMode);
+
+	Memory::SafeRelease(m_pTransparencyBlend);
 
 	Memory::SafeRelease(m_pRenderTargetView);
 	m_pSwapChain->SetFullscreenState(FALSE, NULL);
@@ -426,11 +430,13 @@ void DXApp::SetCamera(float zoom)
 
 bool DXApp::MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes)
 {
+	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE mapSub;
 	ZeroMemory(&mapSub, sizeof(mapSub));
-	m_pImmediateContext->Map(m_pVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
-	memcpy(mapSub.pData, Pyramid, sizeof(Pyramid));
-	m_pImmediateContext->Unmap(m_pVertexBuffer, NULL);
+	hr = m_pImmediateContext->Map(buffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapSub);
+	memcpy(mapSub.pData, data, maxBytes);
+	m_pImmediateContext->Unmap(buffer, NULL);
+	return SUCCEEDED(hr);
 }
 
 bool DXApp::InitDirect3D()
@@ -475,6 +481,11 @@ bool DXApp::InitDirect3D()
 		return false;
 	}
 
+	if (!CreateBlendState()){
+		OutputDebugString("Failed to create Blend State for Transparency");
+		return false;
+	}
+
     SetCamera(m_Zoom);
 
 	return true;
@@ -494,6 +505,29 @@ LRESULT DXApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
+}
+
+bool DXApp::CreateBlendState()
+{
+	D3D11_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+	ZeroMemory(&rtbd, sizeof(rtbd));
+
+	rtbd.BlendEnable = true;
+	rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
+	rtbd.DestBlend = D3D11_BLEND_BLEND_FACTOR;
+	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	return SUCCEEDED(m_pDevice->CreateBlendState(&blendDesc, &m_pTransparencyBlend));
 }
 
 
