@@ -4,6 +4,8 @@
 #include <string>
 #include "DXUtil.h"
 
+#define ARRAYLEN(arr) sizeof(arr)/sizeof(arr[0])
+
 typedef struct 
 {
 	DirectX::XMFLOAT3 pos;
@@ -33,6 +35,7 @@ public:
     void SetCamera(float zoom);
 	bool LoadTexture(const wchar_t *TexPath);
 	bool MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes);
+	int CreateRasterizerState(D3D11_RASTERIZER_DESC*);
 
 protected:
 
@@ -78,10 +81,6 @@ protected:
 	ID3D11Texture2D*			m_pDepthStencilBuffer;
 	ID3D11InputLayout*			m_pLayout;
 
-	ID3D11RasterizerState*		m_pWireFrameRasterizer;
-	ID3D11RasterizerState*		m_pCCWcullMode;
-	ID3D11RasterizerState*		m_pCWcullMode;
-
 	ID3D11ShaderResourceView*	m_pTextureResourceView;
 	ID3D11Resource*				m_pTextureResource;
 	ID3D11SamplerState*			m_pTextureSamplerState;
@@ -91,6 +90,7 @@ protected:
     // Raw DX Resources
 
     cbPerObject                 m_cbPerObj;
+	ID3D11RasterizerState*		m_pRasterizerStates[10];
 
 protected:
 
@@ -106,11 +106,10 @@ private:
 	bool BuildPipeline();
 	bool CompilePS();
 	bool CompileVS();
-	bool BuildVertexBuffer(int numOfVertices);
-	bool BuildIndexBuffer(int numOfIndices);
+	bool BuildVertexBuffer(int);
+	bool BuildIndexBuffer(int);
 	bool BuildDepthStencilView();
     bool CreateConstantBuffer();
-	bool CreateRasterizerState();
 	bool CreateBlendState();
 };
 

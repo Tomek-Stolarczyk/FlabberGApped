@@ -12,9 +12,16 @@ public:
     void ProcessKey(UINT keyPress);
 
 private:
+	DirectX::XMMATRIX mWorld1;
+	DirectX::XMMATRIX mWorld2;
 	bool state[10];
 	float rot = 0.0f;
 	float rotSpeed = 0.0f;
+
+	//DX Resources
+	int r_CCWCullMode;
+	int r_CWCullMode;
+
 };
 
 TestApp::TestApp(HINSTANCE hInstance) : DXApp(hInstance)
@@ -35,6 +42,26 @@ bool TestApp::Init()
 	LoadTexture(L"..\\..\\Resources\\Wood.DDS");
 	for (int i = 0; i < sizeof(state); i++)
 		state[i] = true;
+
+	
+	D3D11_RASTERIZER_DESC cmdesc;
+	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.CullMode = D3D11_CULL_BACK;
+
+	cmdesc.FrontCounterClockwise = true;
+	r_CCWCullMode = DXApp::CreateRasterizerState(&cmdesc);
+
+	if (r_CCWCullMode < 0)
+		return false;
+
+	cmdesc.FrontCounterClockwise = false;
+	r_CWCullMode = DXApp::CreateRasterizerState(&cmdesc);
+
+	if (r_CWCullMode < 0)
+		return false;
+
+
 	return true;
 }
 
@@ -85,15 +112,31 @@ void TestApp::Update(float dt)
 	if (rot > DirectX::XM_2PI)
 		rot = 0.0f;
 
-	m_mWorld = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixIdentity();
-	DirectX::XMVECTOR rotAxis = { 0.0f, 1.0f, 0.0f, 0.0f };
+	DirectX::XMMATRIX translationMatrix;
+	DirectX::XMMATRIX rotMatrix;
+	DirectX::XMVECTOR rotAxis;
 
+	mWorld1 = DirectX::XMMatrixIdentity();
+	translationMatrix = DirectX::XMMatrixIdentity();
+	rotMatrix = DirectX::XMMatrixIdentity();
+	rotAxis = DirectX::XMLoadFloat4(&DirectX::XMFLOAT4( 0.0f, 1.0f, 0.0f, 0.0f ));
 	rotMatrix = DirectX::XMMatrixRotationAxis(rotAxis, rot);
-	//translationMatrix = DirectX::XMMatrixTranslation(0.0f, 5.0f, 0.0f);
+	translationMatrix = DirectX::XMMatrixTranslation(-2.0f, 0.0f, 0.0f);
+	mWorld1 = translationMatrix * rotMatrix;
 
-	m_mWorld = translationMatrix * rotMatrix;
+	mWorld2 = DirectX::XMMatrixIdentity();
+	translationMatrix = DirectX::XMMatrixIdentity();
+	rotMatrix = DirectX::XMMatrixIdentity();
+	rotAxis = DirectX::XMLoadFloat4(&DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f));
+	rotMatrix = DirectX::XMMatrixRotationAxis(rotAxis, rot);
+	translationMatrix = DirectX::XMMatrixTranslation(2.0f, 0.0f, 0.0f);
+	mWorld2 = translationMatrix * rotMatrix;
+
+
+	//DirectX::XMVECTOR cubePos = DirectX::XMVectorZero();
+
+	//cubePos = DirectX::XMVector3TransformCoord(cubePos, cube1World);
+
 
 }
 
@@ -102,6 +145,12 @@ void TestApp::Render(float dt)
 
 	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView, DirectX::Colors::Blue);
 	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	float blendFactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
+
+	m_pImmediateContext->OMSetBlendState(m_pTransparencyBlend, blendFactor, 0xffffffff);
+
+
 
 
 	VERTEX Pyramid[] = {
@@ -142,7 +191,7 @@ void TestApp::Render(float dt)
 
 	// Vertex Shader
     
-    m_mWVP = m_mWorld * m_mCamView * m_mCamProjection;
+    m_mWVP = mWorld1 * m_mCamView * m_mCamProjection;
     m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
     m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);
     m_pImmediateContext->VSSetConstantBuffers(0,1, &m_pPerObjectConstantBuffer);
@@ -152,20 +201,17 @@ void TestApp::Render(float dt)
 	m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureResourceView);
 	m_pImmediateContext->PSSetSamplers(0, 1, &m_pTextureSamplerState);
 
-	// Rasterizer
-
-	//m_pImmediateContext->RSSetState(m_pWireFrameRasterizer);
-
 	// Draw
 
-    for (int i = 0; i < sizeof(state); i++)
-    {
-		if (state[i])
-		{
-			m_pImmediateContext->DrawIndexed(3, 3 * i, 0);
-		}
-    }
-        
+	m_pImmediateContext->DrawIndexed(6*3, 0, 0);
+    
+	m_mWVP = mWorld2 * m_mCamView * m_mCamProjection;
+	m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
+	m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);
+	m_pImmediateContext->VSSetConstantBuffers(0, 1, &m_pPerObjectConstantBuffer);
+
+	m_pImmediateContext->DrawIndexed(6*3, 0, 0);
+
 	m_pSwapChain->Present(0, 0);
 }
 

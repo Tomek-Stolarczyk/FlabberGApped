@@ -41,9 +41,8 @@ DXApp::~DXApp()
 	Memory::SafeRelease(m_pDepthStencilView);
 	Memory::SafeRelease(m_pDepthStencilBuffer);
 
-	Memory::SafeRelease(m_pWireFrameRasterizer);
-	Memory::SafeRelease(m_pCCWcullMode);
-	Memory::SafeRelease(m_pCWcullMode);
+	for (int i = 0; i < ARRAYLEN(m_pRasterizerStates); i++)
+		Memory::SafeRelease(m_pRasterizerStates[i]);
 
 	Memory::SafeRelease(m_pTransparencyBlend);
 
@@ -372,14 +371,27 @@ bool DXApp::CreateConstantBuffer()
     return SUCCEEDED(m_pDevice->CreateBuffer(&bufDesc, NULL, &m_pPerObjectConstantBuffer));
 }
 
-bool DXApp::CreateRasterizerState()
+int DXApp::CreateRasterizerState(D3D11_RASTERIZER_DESC* RasDesc)
 {
-	D3D11_RASTERIZER_DESC wfdesc;
-	ZeroMemory(&wfdesc, sizeof(wfdesc));
-	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
-	wfdesc.CullMode = D3D11_CULL_NONE;
+	ID3D11RasterizerState* newRasterizer;
+	HRESULT hr;
+	hr = m_pDevice->CreateRasterizerState(RasDesc, &newRasterizer);
+	if (FAILED(hr))
+		return hr;
+	int i;
+	for (i = 1; i < ARRAYLEN(m_pRasterizerStates); i++)
+	{
+		if (m_pRasterizerStates[i] == NULL)
+		{
+			m_pRasterizerStates[i] = newRasterizer;
+			break;
+		}
+	}
 
-	return SUCCEEDED(m_pDevice->CreateRasterizerState(&wfdesc, &m_pWireFrameRasterizer));
+	if (i == ARRAYLEN(m_pRasterizerStates))
+		return -1;
+
+	return i;
 }
 
 bool DXApp::LoadTexture(const wchar_t *TexPath)
@@ -475,11 +487,6 @@ bool DXApp::InitDirect3D()
         OutputDebugString("Failed to create constant buffer");
         return false;
     }
-
-	if (!CreateRasterizerState()){
-		OutputDebugString("Failed to create wireframe rasterizer state");
-		return false;
-	}
 
 	if (!CreateBlendState()){
 		OutputDebugString("Failed to create Blend State for Transparency");
