@@ -1,5 +1,4 @@
 #pragma once
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <string>
 #include "DXUtil.h"
@@ -20,7 +19,7 @@ struct cbPerObject
 class DXApp
 {
 public:
-	DXApp(HINSTANCE hInstance);
+    explicit DXApp(HINSTANCE hInstance);
 	virtual ~DXApp();
 
 
@@ -42,8 +41,8 @@ protected:
 	//Win32 attributes
 	HWND			m_hAppWnd;
 	HINSTANCE		m_hAppInstance;
-	UINT			m_ClientWidth;
-	UINT			m_ClientHeight;
+	LONG			m_ClientWidth;
+	LONG			m_ClientHeight;
 	std::string		m_AppTitle;
 	DWORD			m_WndStyle;
 
