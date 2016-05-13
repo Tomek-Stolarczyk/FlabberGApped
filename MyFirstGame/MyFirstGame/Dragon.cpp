@@ -4,7 +4,8 @@
 
 Dragon::Dragon()
 {
-
+    MeshLoader DragonObjFile("..\\..\\Resources\\dragon.obj");
+    DragonObjFile.ParseMesh();
 }
 
 

@@ -1,5 +1,6 @@
 #include "DXApp.h"
-#include <assert.h>
+#include <ErrorMessage.h>
+#include <Dragon.h>
 
 namespace
 {
@@ -14,21 +15,21 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-DXApp::DXApp(HINSTANCE hInstance)
-{
-	m_hAppInstance = hInstance;
-	m_hAppWnd = NULL;
-	m_ClientHeight = 600;
-	m_ClientWidth = 800;
-	m_AppTitle = "My First Game";
-	m_WndStyle = WS_OVERLAPPEDWINDOW;
+DXApp::DXApp(HINSTANCE hInstance):
+    m_hAppInstance(hInstance),
+    m_hAppWnd(nullptr),
+    m_ClientHeight(600),
+    m_ClientWidth(800),
+    m_AppTitle("My First Game"),
+    m_WndStyle(WS_OVERLAPPEDWINDOW),
 
+    m_pDevice(nullptr),
+    m_pImmediateContext(nullptr),
+    m_pSwapChain(nullptr),
+    m_pRenderTargetView(nullptr)
+{
 	g_pApp = this;
 
-	m_pDevice = nullptr;
-	m_pImmediateContext = nullptr;
-	m_pSwapChain = nullptr;
-	m_pRenderTargetView = nullptr;
 }
 
 DXApp::~DXApp()
@@ -189,7 +190,7 @@ bool DXApp::BuildPipeline()
 
 	if (FAILED(hr))
 	{
-		OutputDebugString("Failed to create Device");
+        globalErrorMessage.ThrowError("Failed to create Device");
 		return false;
 	}
 
@@ -396,8 +397,8 @@ int DXApp::CreateRasterizerState(D3D11_RASTERIZER_DESC* RasDesc)
 
 bool DXApp::LoadTexture(const wchar_t *TexPath)
 {
-	HRESULT hr;
-	hr = DirectX::CreateDDSTextureFromFile(m_pDevice, TexPath, &m_pTextureResource, &m_pTextureResourceView);
+	HRESULT hr = S_OK;
+	//hr = DirectX::CreateDDSTextureFromFile(m_pDevice, TexPath, &m_pTextureResource, &m_pTextureResourceView);
 	if (FAILED(hr))
 	{
 		if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
@@ -440,7 +441,7 @@ void DXApp::SetCamera(float zoom)
 
 }
 
-bool DXApp::MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes)
+bool DXApp::UpdateBufferByMap(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes)
 {
 	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE mapSub;
@@ -494,6 +495,8 @@ bool DXApp::InitDirect3D()
 	}
 
     SetCamera(m_Zoom);
+
+    Dragon myNewDragon;
 
 	return true;
 }

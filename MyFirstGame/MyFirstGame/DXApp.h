@@ -3,18 +3,18 @@
 #include <string>
 #include "DXUtil.h"
 
+#include <d3d11.h>
+#include <DirectXColors.h>
+
+#include <D3Dcompiler.h>
+#include <DDSTextureLoader.h>
+
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "D3DCompiler.lib")
+
 #define ARRAYLEN(arr) sizeof(arr)/sizeof(arr[0])
 
-typedef struct 
-{
-	DirectX::XMFLOAT3 pos;
-	DirectX::XMFLOAT2 texCoord;
-} VERTEX, *pVertex;
-
-struct cbPerObject
-{
-    DirectX::XMMATRIX  WVP;
-};
+#include <Common.h>
 
 class DXApp
 {
@@ -33,7 +33,7 @@ public:
 
     void SetCamera(float zoom);
 	bool LoadTexture(const wchar_t *TexPath);
-	bool MapBuffer(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes);
+	bool UpdateBufferByMap(ID3D11Buffer* buffer, BYTE* data, size_t maxBytes);
 	int CreateRasterizerState(D3D11_RASTERIZER_DESC*);
 
 protected:

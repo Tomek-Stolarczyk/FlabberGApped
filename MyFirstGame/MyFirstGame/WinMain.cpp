@@ -1,4 +1,5 @@
 #include "DXApp.h"
+#include <Common.h>
 
 class TestApp : public DXApp
 {
@@ -151,8 +152,6 @@ void TestApp::Render(float dt)
 	m_pImmediateContext->OMSetBlendState(m_pTransparencyBlend, blendFactor, 0xffffffff);
 
 
-
-
 	VERTEX Pyramid[] = {
 		{ {  0.0f,  0.5f,  0.0f }, {0.5f, 0.0f}},  //0 Tip
 		{ { -0.5f, -0.5f, -0.5f }, {1.0f, 1.0f}},  //1 Front Right
@@ -185,9 +184,9 @@ void TestApp::Render(float dt)
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	MapBuffer(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
+	UpdateBufferByMap(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
 
-	MapBuffer(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indices), sizeof(Indices));
+	UpdateBufferByMap(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indices), sizeof(Indices));
 
 	// Vertex Shader
     

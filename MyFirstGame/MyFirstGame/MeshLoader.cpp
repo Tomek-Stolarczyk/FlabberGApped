@@ -5,7 +5,14 @@ using namespace std;
 
 void MeshLoader::ParseMesh()
 {
+    string lineContents;
+    while (inputStream)
+    {
+        getline(inputStream, lineContents);
 
+        if (lineContents[0] == 'v') // vertex
+            globalErrorMessage.LogMessage(lineContents);
+    }
 }
 
 MeshLoader::MeshLoader()
@@ -23,10 +30,10 @@ MeshLoader::MeshLoader(string meshLocation)
         errMsg.append(meshLocation);
         globalErrorMessage.ThrowError(errMsg);
     }
-    inputStream.close();
 }
 
 
 MeshLoader::~MeshLoader()
 {
+    inputStream.close();
 }
