@@ -2,6 +2,8 @@
 #include <Windows.h>
 
 static int numOfInstances = 0;
+ErrorMessage globalErrorMessage;
+
 
 ErrorMessage::ErrorMessage()
 {

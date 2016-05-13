@@ -11,4 +11,4 @@ public:
     void ThrowError(std::string msg);
 };
 
-static ErrorMessage globalErrorMessage;
+extern ErrorMessage globalErrorMessage;
