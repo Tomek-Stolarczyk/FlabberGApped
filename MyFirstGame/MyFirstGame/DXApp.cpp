@@ -1,6 +1,7 @@
 #include "DXApp.h"
 #include <ErrorMessage.h>
 #include <Dragon.h>
+#include <Pyramid.h>
 
 namespace
 {
@@ -495,8 +496,6 @@ bool DXApp::InitDirect3D()
 	}
 
     SetCamera(m_Zoom);
-
-    Dragon myNewDragon;
 
 	return true;
 }

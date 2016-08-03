@@ -1,5 +1,6 @@
 #include "DXApp.h"
 #include <Common.h>
+#include "Pyramid.h"
 
 class TestApp : public DXApp
 {
@@ -13,6 +14,9 @@ public:
     void ProcessKey(UINT keyPress);
 
 private:
+
+    Pyramid myNewDragon;
+
 	DirectX::XMMATRIX mWorld1;
 	DirectX::XMMATRIX mWorld2;
 	bool state[10];
@@ -151,7 +155,9 @@ void TestApp::Render(float dt)
 
 	m_pImmediateContext->OMSetBlendState(m_pTransparencyBlend, blendFactor, 0xffffffff);
 
-
+    VERTEX *Vertices = myNewDragon.GetVertexData();
+    int * Indecies = myNewDragon.GetIndexData();
+    /*
 	VERTEX Pyramid[] = {
 		{ {  0.0f,  0.5f,  0.0f }, {0.5f, 0.0f}},  //0 Tip
 		{ { -0.5f, -0.5f, -0.5f }, {1.0f, 1.0f}},  //1 Front Right
@@ -166,7 +172,7 @@ void TestApp::Render(float dt)
 		{ { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f} },  //8 bottom left
 	};
 
-	DWORD Indices[] = {
+	int Indices[] = {
         2, 4, 0, // Back
         1, 4, 2, // Bottom
         1, 3, 4, // Bottom
@@ -180,13 +186,14 @@ void TestApp::Render(float dt)
 
 	};
 	
+    */
 	// IA
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	UpdateBufferByMap(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
+    UpdateBufferByMap(m_pVertexBuffer, reinterpret_cast<BYTE*>(Vertices), sizeof(Vertices) * myNewDragon.GetNumOfVertices());
 
-	UpdateBufferByMap(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indices), sizeof(Indices));
+    UpdateBufferByMap(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indecies), sizeof(Indecies) * myNewDragon.GetNumOfIndecies());
 
 	// Vertex Shader
     
