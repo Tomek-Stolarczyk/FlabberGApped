@@ -21,6 +21,8 @@ MyfirstGame/MyfirstGame/MyFirstGame.vcxproj.user
 MyfirstGame/MyFirstGame.VC.VC.opendb
 MyfirstGame/MyFirstGame.VC.db
 MyfirstGame/.vs/
+*.db
+*.opendb
  
 # Packages #
 ############
