@@ -14,6 +14,9 @@ public:
     void ProcessKey(UINT keyPress);
 
 private:
+
+    Pyramid myNewDragon;
+
 	DirectX::XMMATRIX mWorld1;
 	DirectX::XMMATRIX mWorld2;
 	bool state[10];
@@ -152,10 +155,7 @@ void TestApp::Render(float dt)
 
 	m_pImmediateContext->OMSetBlendState(m_pTransparencyBlend, blendFactor, 0xffffffff);
 
-
     Pyramid myNewPyramid;
-	
-	// IA
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
