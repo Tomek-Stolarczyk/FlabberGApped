@@ -71,7 +71,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Dragon.cpp" />
+    <ClCompile Include="Models.cpp" />
     <ClCompile Include="DXApp.cpp" />
     <ClCompile Include="DXUtil.cpp" />
     <ClCompile Include="ErrorMessage.cpp" />
@@ -80,7 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
-    <ClInclude Include="Dragon.h" />
+    <ClInclude Include="Models.h" />
     <ClInclude Include="DXApp.h" />
     <ClInclude Include="DXUtil.h" />
     <ClInclude Include="ErrorMessage.h" />

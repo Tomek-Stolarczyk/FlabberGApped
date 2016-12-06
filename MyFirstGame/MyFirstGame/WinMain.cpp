@@ -1,5 +1,6 @@
 #include "DXApp.h"
 #include <Common.h>
+#include <Models.h>
 
 class TestApp : public DXApp
 {
@@ -152,41 +153,15 @@ void TestApp::Render(float dt)
 	m_pImmediateContext->OMSetBlendState(m_pTransparencyBlend, blendFactor, 0xffffffff);
 
 
-	VERTEX Pyramid[] = {
-		{ {  0.0f,  0.5f,  0.0f }, {0.5f, 0.0f}},  //0 Tip
-		{ { -0.5f, -0.5f, -0.5f }, {1.0f, 1.0f}},  //1 Front Right
-		{ { -0.5f, -0.5f,  0.5f }, {1.0f, 1.0f}}, //2 Back Right
-		{ {  0.5f, -0.5f, -0.5f }, {1.0f, 0.0f}},  //3 Front Left
-		{ {  0.5f, -0.5f,  0.5f }, {1.0f, 0.0f}},   //4 Back Left
-
-		//Square
-		{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f} },  //5 Top Left
-		{ { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f} },  //6 Top right
-		{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f} },  //7 Bottom right
-		{ { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f} },  //8 bottom left
-	};
-
-	DWORD Indices[] = {
-        2, 4, 0, // Back
-        1, 4, 2, // Bottom
-        1, 3, 4, // Bottom
-        0, 1, 2, // Left Side
-		0, 4, 3, // Right Side
-        3, 1, 0, // Front
-
-		//5, 7, 8,
-		//5, 6, 7
-
-
-	};
+    Pyramid myNewPyramid;
 	
 	// IA
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	UpdateBufferByMap(m_pVertexBuffer, reinterpret_cast<BYTE*>(Pyramid), sizeof(Pyramid));
+	UpdateBufferByMap(m_pVertexBuffer, reinterpret_cast<BYTE*>(myNewPyramid.GetVertices()), myNewPyramid.SizeOfVertexBuffer());
 
-	UpdateBufferByMap(m_pIndexBuffer, reinterpret_cast<BYTE*>(Indices), sizeof(Indices));
+	UpdateBufferByMap(m_pIndexBuffer, reinterpret_cast<BYTE*>(myNewPyramid.GetIndecies()), myNewPyramid.SizeOfIndexBuffer());
 
 	// Vertex Shader
     
@@ -204,12 +179,12 @@ void TestApp::Render(float dt)
 
 	m_pImmediateContext->DrawIndexed(6*3, 0, 0);
     
-	m_mWVP = mWorld2 * m_mCamView * m_mCamProjection;
-	m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
-	m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);
-	m_pImmediateContext->VSSetConstantBuffers(0, 1, &m_pPerObjectConstantBuffer);
+	//m_mWVP = mWorld2 * m_mCamView * m_mCamProjection;
+	//m_cbPerObj.WVP = DirectX::XMMatrixTranspose(m_mWVP);
+	//m_pImmediateContext->UpdateSubresource(m_pPerObjectConstantBuffer, 0, NULL, &m_cbPerObj, 0, 0);
+	//m_pImmediateContext->VSSetConstantBuffers(0, 1, &m_pPerObjectConstantBuffer);
 
-	m_pImmediateContext->DrawIndexed(6*3, 0, 0);
+	//m_pImmediateContext->DrawIndexed(6*3, 0, 0);
 
 	m_pSwapChain->Present(0, 0);
 }
